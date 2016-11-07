@@ -3,10 +3,9 @@ import cors from 'cors';
 
 const app = express();
 app.use(cors());
-app.get('/', (req, res) => {
-  res.json({
-    hello: 'JS World',
-  });
+app.get('/result2A', (req, res) => {
+  let result = (+req.query.a || 0) + (+req.query.b || 0);
+  res.send( result.toString() )
 });
 
 app.listen(3000, () => {
