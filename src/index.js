@@ -3,7 +3,7 @@ import cors from 'cors';
 
 const app = express();
 app.use(cors());
-app.get('/result2B', (req, res) => {
+app.get('/result2c', (req, res) => {
   if (req.query.fullname === "")
     res.send( "Invalid fullname" );
   let result = req.query.fullname.replace(/\s+/g,' ').trim().split(' ');
