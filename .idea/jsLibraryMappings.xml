@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <file url="file://$PROJECT_DIR$" libraries="{skb_Intensive/node_modules}" />
+    <file url="PROJECT" libraries="{Node, babel-core-DefinitelyTyped, babel-generator-DefinitelyTyped, es6-collections-DefinitelyTyped, es6-error-DefinitelyTyped, express-route-fs-DefinitelyTyped, skb_Intensive/node_modules}" />
+    <includedPredefinedLibrary name="ECMAScript 6" />
+  </component>
+</project>
