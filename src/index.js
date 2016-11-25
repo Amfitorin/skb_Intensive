@@ -5,7 +5,7 @@ import 'isomorphic-fetch';
 
 const pcUrl = 'https://gist.githubusercontent.com/isuvorov/55f38b82ce263836dadc0503845db4da/raw/pets.json';
 
-let pc = {};
+let pc = fetch(pcUrl);
 //noinspection JSUnresolvedFunction
 fetch(pcUrl)
   .then(async (res) => {
@@ -15,15 +15,60 @@ fetch(pcUrl)
     console.log('Чтото пошло не так:', err);
   });
 
+const Filter = function(obj,resu){
+    let result = [];
+   let count = 0;
+          Array(String(resu[1]).split('&'))[0].forEach((z)=> {
+            obj = count === 0 ? obj : result;
+
+            result = [];
+            resu = String(z).split('=');
+            if ( resu[0] ==='havePet'){
+              let temp = pc.pets;
+              let test = {}
+              temp.forEach((pet)=>{
+                if (pet.type === resu[1] && ! test[pet.userId])
+                  test[pet.userId] = true;
+              });
+              obj.forEach((user)=>{
+                if ( test[user.id] )
+                  result.push( user );
+              });
+            }
+            else
+              obj.forEach((y)=> {
+                let keys = String(resu[0]).split('_');
+                if (keys.length > 1) {
+                  if (keys[1] === 'lt' && y[keys[0]] && y[keys[0]] < ( Number(resu[1]) || resu[1] ))
+                    result.push(y);
+                  else if (keys[1] === 'gt' && y[keys[0]] && y[keys[0]] > ( Number(resu[1]) || resu[1] ))
+                    result.push(y);
+                }
+                else if (y[resu[0]] && y[resu[0]] === ( Number(resu[1]) || resu[1] ))
+                  result.push(y);
+              });
+              obj = result;
+            });
+            return obj;
+}
 
 
 const toJSON = function ( param, res ){
   if ( param === '/length' )
     res.send(pc.length.toString());
-  let obj = pc;
+  pc.users.forEach((user)=>{
+    user.pets = undefined;
+  });
+  pc.pets.forEach((pet)=>{
+      pet.user = undefined;
+    });
+
+  var obj = pc;
+  let byName = false
+  let last;
   const requests = param.split('/');
   requests.forEach((x)=>{
-
+    last = !last ? x:last;
     if (x==='')
       obj = obj;
     else if (Number(x)||Number(x)===0) {
@@ -31,29 +76,70 @@ const toJSON = function ( param, res ){
         res.status('404').send("Not Found");
       obj = obj[Number(x) - 1];
     }
-    else {
-      let res = x.split('?');
+    else if (x.startsWith('populate')) {
       let result = [];
-      if (res.length === 1 )
-          obj = obj[x];
-      else {
-        let key = res[0];
-        Array(String(res[1]).split('&')).forEach((z)=> {
-          res = String(z).split('=');
-          obj[key].forEach((y)=> {
-            console.log(y[res[0]]);
-            let keys = String(res[0]).split('_');
-            if (keys.length > 1) {
-              if (keys[1] === 'lt' && y[keys[0]] && y[keys[0]] < ( Number(res[1]) || res[1] ))
-                result.push(y);
-              else if (keys[1] === 'gt' && y[keys[0]] && y[keys[0]] > ( Number(res[1]) || res[1] ))
-                result.push(y);
-            }
-            else if (y[res[0]] && y[res[0]] === ( Number(res[1]) || res[1] ))
-              result.push(y);
+      let query = x.split('?');
+      let test = pc;
+      if (query.length != 1)
+        obj = Filter(obj, query)
+      if (last ==='pets'){
+        if ( !Array.isArray(obj) )
+         {
+            let temp = obj;
+            temp.user = test.users[obj.userId - 1];
+            obj = temp;
+         }
+        else{
+          let temp = obj;
+          temp.forEach((pet)=>{
+            pet.user = test.users[pet.userId - 1];
           });
-          obj = result;
-        });
+          obj = temp;
+          }
+          }
+      else{
+          if( !Array.isArray(obj) )
+            {
+              let pets = [];
+              let temp = obj;
+              test.pets.forEach((pet)=>{
+                if (pet.userId == obj.id)
+                  pets.push(pet);
+              });
+              temp.pets = pets;
+              obj = temp;
+            }
+          else{
+            let temp = obj;
+            temp.forEach((user)=>{
+              let pets = [];
+              test.pets.forEach((pet)=>{
+                if (pet.userId == user.id)
+                  pets.push(pet);
+              });
+              user.pets = pets;
+            });
+            obj = temp;
+          }
+        }
+     }
+    else {
+      let resu = x.split('?');
+      let result = [];
+      if (resu.length === 1 )
+        if (obj[x] && !Number(x)){
+          obj = obj[x];
+          }
+        else{
+          obj.forEach((curr)=>{
+            if (curr.username === x || curr.id === x )
+              result.push(curr);
+          });
+          obj = result[0];
+        }
+      else {
+        obj = Filter(obj[resu[0]],resu);
+
       }
 
     }
@@ -69,7 +155,6 @@ const toJSON = function ( param, res ){
 const app = express();
 app.use(cors());
 app.use( function ( req, res, next ){
-  console.log(req.url);
   next();
 });
 app.get('/result3b/volumes', (req, res) => {
