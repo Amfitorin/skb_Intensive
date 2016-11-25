@@ -56,14 +56,9 @@ const Filter = function(obj,resu){
 const toJSON = function ( param, res ){
   if ( param === '/length' )
     res.send(pc.length.toString());
-  pc.users.forEach((user)=>{
-    user.pets = undefined;
-  });
-  pc.pets.forEach((pet)=>{
-      pet.user = undefined;
-    });
 
-  var obj = pc;
+  var obj = {};
+  Object.Assign(obj,pc);
   let byName = false
   let last;
   const requests = param.split('/');
